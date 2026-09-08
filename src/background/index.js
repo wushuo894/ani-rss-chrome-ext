@@ -1,4 +1,4 @@
-import { normalizeSettings, hostPattern, callApi, rssToAniBody, groupsRequest, normalizeGroups, validateDraft, mergeDraft } from '../shared/api.js';
+import { normalizeSettings, hostPattern, callApi, rssToAniBody, groupsRequest, normalizeGroups, validateDraft, normalizePreview, mergeDraft } from '../shared/api.js';
 
 const sites = globalThis.AniRssSites;
 const storageReady = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
@@ -8,7 +8,7 @@ function isExtensionPage(sender) {
   if (sender.id !== chrome.runtime.id || !sender.url) return false;
   const url = new URL(sender.url);
   return url.protocol === 'chrome-extension:' && url.hostname === chrome.runtime.id &&
-    ['/options.html', '/subscribe.html'].includes(url.pathname);
+    ['/options.html', '/subscribe.html', '/preview.html'].includes(url.pathname);
 }
 
 async function readSettings() {
@@ -56,6 +56,49 @@ async function takePopupSource(tabId) {
   const entry = (await chrome.storage.session.get(key))[key];
   await chrome.storage.session.remove(key);
   return entry?.expiresAt >= Date.now() && sites.parseFeedUrl(entry.url)?.url || null;
+}
+
+function previewKey(id) {
+  if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/.test(id)) throw new Error('预览窗口参数无效。');
+  return `subscription-preview:${id}`;
+}
+
+async function openPreview(message) {
+  const subscription = mergeDraft(message.draft, message.edits);
+  const id = crypto.randomUUID();
+  const key = previewKey(id);
+  await chrome.storage.session.set({ [key]: { subscription, expiresAt: Date.now() + 10 * 60 * 1000 } });
+  try {
+    const current = await chrome.windows.getLastFocused();
+    const width = Math.min(1200, current.width || 1200);
+    const height = Math.min(820, current.height || 820);
+    const left = Number.isInteger(current.left) ? current.left + Math.max(0, Math.round(((current.width || width) - width) / 2)) : undefined;
+    const top = Number.isInteger(current.top) ? current.top + Math.max(0, Math.round(((current.height || height) - height) / 2)) : undefined;
+    await chrome.windows.create({
+      url: `${chrome.runtime.getURL('preview.html')}?id=${encodeURIComponent(id)}`,
+      type: 'popup',
+      focused: true,
+      width,
+      height,
+      left,
+      top,
+    });
+  } catch (error) {
+    await chrome.storage.session.remove(key);
+    throw new Error(error.message || '浏览器无法创建预览窗口。');
+  }
+}
+
+async function getPreview(id) {
+  const key = previewKey(id);
+  const entry = (await chrome.storage.session.get(key))[key];
+  if (!entry || entry.expiresAt < Date.now()) {
+    await chrome.storage.session.remove(key);
+    throw new Error('预览数据已失效，请返回订阅窗口重新打开预览。');
+  }
+  const subscription = validateDraft(entry.subscription);
+  const preview = normalizePreview((await callApi(await requireSettings(), 'previewAni', subscription)).data);
+  return { subscription, preview };
 }
 
 async function getContext(tabId) {
@@ -111,6 +154,8 @@ async function handleMessage(message, sender) {
     case 'settings:test': return (await callApi(await requireSettings(message.settings), 'about')).data;
     case 'context:get': return getContext(message.tabId);
     case 'popup:source': return takePopupSource(message.tabId);
+    case 'preview:open': return openPreview(message);
+    case 'preview:get': return getPreview(message.id);
     case 'groups:get': {
       const { endpoint, query } = groupsRequest(message.subject);
       return normalizeGroups((await callApi(await requireSettings(), endpoint, undefined, { query })).data);
@@ -118,6 +163,10 @@ async function handleMessage(message, sender) {
     case 'draft:create': {
       const body = rssToAniBody(message.source);
       return validateDraft((await callApi(await requireSettings(), 'rssToAni', body)).data);
+    }
+    case 'subscription:preview': {
+      const ani = mergeDraft(message.draft, message.edits);
+      return normalizePreview((await callApi(await requireSettings(), 'previewAni', ani)).data);
     }
     case 'subscription:add': return addSubscription(message);
     default: throw new Error('未知操作。');

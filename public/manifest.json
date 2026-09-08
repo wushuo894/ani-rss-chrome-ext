@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ANI-RSS 订阅助手",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "key": "anirss114514",
   "description": "从 AniBT、Mikan 和 AnimeGarden 选择番剧与字幕组，直接订阅到自己的 ANI-RSS。",
   "minimum_chrome_version": "127",
   "permissions": ["storage", "activeTab", "scripting"],

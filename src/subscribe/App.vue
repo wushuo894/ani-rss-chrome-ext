@@ -16,7 +16,7 @@ const operation = ref('');
 const sourceForm = ref();
 const subscriptionForm = ref();
 const advanced = ref([]);
-const editor = reactive({ title: '', subgroup: '', season: undefined, offset: undefined, match: '', exclude: '', enable: false, downloadNew: false });
+const editor = reactive({ title: '', subgroup: '', season: undefined, offset: undefined, match: '', exclude: '', enable: false, downloadNew: false, notDownload: [] });
 const changedFlags = new Set();
 const status = reactive({ message: '正在读取当前页面…', type: 'info' });
 const canParse = computed(() => !busy.value && configured.value && (selectedKey.value !== 'manual' || Boolean(manualUrl.value.trim())));
@@ -83,6 +83,7 @@ function fillDraft(value) {
   for (const name of ['season', 'offset']) editor[name] = value[name] ?? undefined;
   for (const name of ['match', 'exclude']) editor[name] = Array.isArray(value[name]) ? value[name].join('\n') : '';
   for (const name of ['enable', 'downloadNew']) editor[name] = value[name] === true;
+  editor.notDownload = Array.isArray(value.notDownload) ? [...value.notDownload] : [];
 }
 
 function collectEdits() {
@@ -104,7 +105,32 @@ function collectEdits() {
   for (const name of ['enable', 'downloadNew']) {
     if (typeof draft.value[name] === 'boolean' || changedFlags.has(name)) edits[name] = editor[name];
   }
+  edits.notDownload = [...new Set(editor.notDownload
+    .filter((episode) => typeof episode === 'number' && Number.isFinite(episode)))].sort((a, b) => a - b);
   return edits;
+}
+
+async function previewSubscription() {
+  if (busy.value || saved.value || !configured.value || !draft.value || !subscriptionForm.value.$el.reportValidity()) return;
+  let edits;
+  try {
+    edits = collectEdits();
+  } catch (error) {
+    showStatus(error.message, 'error');
+    return;
+  }
+  busy.value = true;
+  operation.value = 'preview';
+  showStatus('正在打开订阅预览窗口…');
+  try {
+    await send('preview:open', { draft: toRaw(draft.value), edits });
+    showStatus('订阅预览已在独立窗口中打开。', 'success');
+  } catch (error) {
+    showStatus(error.message || '无法打开订阅预览窗口。', 'error');
+  } finally {
+    busy.value = false;
+    operation.value = '';
+  }
 }
 
 async function loadGroups() {
@@ -220,6 +246,7 @@ onMounted(async () => {
   }
   busy.value = false;
   initialized.value = true;
+  if (configured.value && subject.value?.type === 'ani-bt') await loadGroups();
 });
 onUnmounted(() => window.removeEventListener('focus', handleFocus));
 </script>
@@ -279,9 +306,16 @@ onUnmounted(() => window.removeEventListener('focus', handleFocus));
             <el-form-item label="排除规则" for="draft-exclude"><el-input id="draft-exclude" v-model="editor.exclude" type="textarea" :rows="3" placeholder="每行一条" :spellcheck="false" @input="changedFlags.add('exclude')" /><small>规则语法与 ANI-RSS 中的设置一致。</small></el-form-item>
           </el-collapse-item>
         </el-collapse>
-        <div class="submit-row"><p>确认后将保存到你的 ANI-RSS。</p><el-button id="add-button" type="primary" native-type="submit" :disabled="busy || saved || !configured" :loading="operation === 'add'">{{ saved ? '已添加订阅' : '添加订阅' }}</el-button></div>
+        <div class="submit-row">
+          <p>可先预览匹配结果，也可以直接添加。</p>
+          <div class="actions">
+            <el-button id="preview-button" :disabled="busy || saved || !configured" :loading="operation === 'preview'" @click="previewSubscription">预览</el-button>
+            <el-button id="add-button" type="primary" native-type="submit" :disabled="busy || saved || !configured" :loading="operation === 'add'">{{ saved ? '已添加订阅' : '添加订阅' }}</el-button>
+          </div>
+        </div>
       </el-form>
     </el-card>
+
     <footer class="page-footer">选好番剧，让 ANI-RSS 接管更新。</footer>
   </main>
 </template>

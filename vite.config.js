@@ -38,7 +38,11 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rolldownOptions: {
-      input: { options: resolve(root, 'options.html'), subscribe: resolve(root, 'subscribe.html') }
+      input: {
+        options: resolve(root, 'options.html'),
+        subscribe: resolve(root, 'subscribe.html'),
+        preview: resolve(root, 'preview.html'),
+      }
     }
   }
 });

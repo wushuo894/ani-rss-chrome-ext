@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import {
-  ElAlert, ElButton, ElCard, ElCheckbox, ElCollapse, ElCollapseItem, ElForm,
-  ElFormItem, ElInput, ElInputNumber, ElOption, ElSelect, ElTag,
+  ElAlert, ElButton, ElCard, ElCheckbox, ElCollapse, ElCollapseItem,
+  ElForm, ElFormItem, ElInput, ElInputNumber, ElOption, ElSelect, ElTag,
 } from 'element-plus';
 import 'element-plus/dist/index.css';
 import '../styles/ui.css';

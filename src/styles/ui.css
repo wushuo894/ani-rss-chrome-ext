@@ -84,6 +84,19 @@ small { font-size: 12px; font-weight: 400; color: var(--muted); overflow-wrap: a
 .submit-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 20px; }
 .submit-row p { margin: 0; color: #85969d; font-size: 11px; }
 .submit-row .el-button { flex-shrink: 0; }
+.preview-page { min-width: 720px; min-height: 600px; }
+.preview-shell { max-width: 1440px; min-height: 100vh; padding: 24px 28px 20px; }
+.preview-shell .page-header { margin-bottom: 14px; }
+.preview-content { padding: 20px; border: 1px solid var(--border); background: #fff; }
+.preview-loading { min-height: 260px; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
+.preview-summary { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 10px; margin-bottom: 14px; color: var(--muted); font-size: 12px; }
+.preview-summary code { min-width: 0; padding: 7px 9px; overflow-wrap: anywhere; color: #34535f; background: #f2f6f7; border: 1px solid #e3ebed; border-radius: 5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.preview-filter { width: 130px; flex: 0 0 130px; }
+.preview-table { width: 100%; min-height: 320px; }
+.preview-cell { display: block; white-space: normal; overflow-wrap: anywhere; line-height: 1.55; }
+.preview-missing { margin-top: 12px; }
+.preview-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; color: var(--muted); font-size: 12px; }
 @media (max-width: 480px) {
   .shell { padding: 22px 16px 16px; }
   .options-shell { padding-top: 30px; }
@@ -93,6 +106,9 @@ small { font-size: 12px; font-weight: 400; color: var(--muted); overflow-wrap: a
   .brand-mark { width: 41px; height: 41px; flex-basis: 41px; border-radius: 12px; }
   .page-header .el-button { font-size: 12px; }
   .submit-row { flex-wrap: wrap; }
+  .preview-summary { grid-template-columns: 1fr; gap: 5px; }
+  .preview-toolbar, .preview-footer { align-items: stretch; flex-direction: column; }
+  .preview-filter { width: 100%; flex-basis: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }

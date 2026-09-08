@@ -1,7 +1,7 @@
 import './sites.js';
 
 const sites = globalThis.AniRssSites;
-const endpoints = new Set(['about', 'mikanGroup', 'aniBTGroup', 'animeGardenGroup', 'rssToAni', 'addAni']);
+const endpoints = new Set(['about', 'mikanGroup', 'aniBTGroup', 'animeGardenGroup', 'rssToAni', 'previewAni', 'addAni']);
 
 export function normalizeBaseUrl(value) {
   if (typeof value !== 'string' || !value.trim()) throw new Error('请填写 ANI-RSS 服务地址。');
@@ -128,6 +128,33 @@ export function validateDraft(draft) {
   return draft;
 }
 
+export function normalizePreview(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !Array.isArray(value.items) || !Array.isArray(value.omitList)) {
+    throw new Error('订阅预览返回格式不正确。');
+  }
+  const items = value.items.map((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error('订阅预览包含无效资源。');
+    const episode = typeof item.episode === 'number' && Number.isFinite(item.episode) ? item.episode : null;
+    return {
+      title: typeof item.title === 'string' ? item.title : '',
+      reName: typeof item.reName === 'string' ? item.reName : '',
+      infoHash: typeof item.infoHash === 'string' ? item.infoHash : '',
+      episode,
+      formatSize: typeof item.formatSize === 'string' ? item.formatSize : '',
+      hasDownloaded: item.hasDownloaded === true,
+      master: item.master === true,
+      subgroup: typeof item.subgroup === 'string' ? item.subgroup : '',
+      pubDate: typeof item.pubDate === 'string' ? item.pubDate : '',
+    };
+  });
+  const omitList = value.omitList.filter((episode) => typeof episode === 'number' && Number.isFinite(episode));
+  return {
+    downloadPath: typeof value.downloadPath === 'string' ? value.downloadPath : '',
+    items,
+    omitList,
+  };
+}
+
 export function mergeDraft(draft, edits = {}) {
   validateDraft(draft);
   const merged = structuredClone(draft);
@@ -156,6 +183,12 @@ export function mergeDraft(draft, edits = {}) {
       if (typeof edits[key] !== 'boolean') throw new Error('订阅开关值无效。');
       merged[key] = edits[key];
     }
+  }
+  if (Object.hasOwn(edits, 'notDownload')) {
+    if (!Array.isArray(edits.notDownload) || edits.notDownload.some((episode) => typeof episode !== 'number' || !Number.isFinite(episode))) {
+      throw new Error('禁止下载的集数列表无效。');
+    }
+    merged.notDownload = [...new Set(edits.notDownload)].sort((a, b) => a - b);
   }
   return merged;
 }
