@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "ANI-RSS 订阅助手",
+  "version": "1.0.0",
+  "description": "从 AniBT、Mikan 和 AnimeGarden 选择番剧与字幕组，直接订阅到自己的 ANI-RSS。",
+  "minimum_chrome_version": "127",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "src/background/index.js", "type": "module" },
+  "action": {
+    "default_title": "订阅到 ANI-RSS",
+    "default_popup": "subscribe.html",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png" }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "content_scripts": [{
+    "matches": [
+      "*://anibt.net/*",
+      "*://mikanani.me/*",
+      "*://mikanime.tv/*",
+      "*://mikan.sakiko.de/*",
+      "*://animes.garden/*",
+      "*://api.animes.garden/*"
+    ],
+    "js": ["src/shared/sites.js", "src/content/index.js"],
+    "css": ["src/content/style.css"],
+    "run_at": "document_idle"
+  }],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  }
+}

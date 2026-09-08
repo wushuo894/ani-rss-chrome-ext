@@ -1,0 +1,30 @@
+button.ani-rss-ext-floating {
+  all: initial;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 12px/1.5 system-ui, -apple-system, "Microsoft YaHei", sans-serif;
+  color: #fff;
+  background: #087f8c;
+  border: 1px solid #087f8c;
+  border-radius: 7px;
+  padding: 5px 10px;
+  margin-left: 8px;
+  cursor: pointer;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+button.ani-rss-ext-floating {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2147483646;
+  padding: 13px 19px;
+  border-radius: 12px;
+  font-size: 14px;
+  box-shadow: 0 6px 24px #073f4840;
+}
+button.ani-rss-ext-floating:hover { background: #066873; }
+button.ani-rss-ext-floating:focus-visible { outline: 3px solid #f3b64d; outline-offset: 3px; }
+button.ani-rss-ext-floating:disabled { opacity: .6; cursor: wait; }

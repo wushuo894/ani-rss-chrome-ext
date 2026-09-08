@@ -1,0 +1,50 @@
+name: Package and Release Chrome Extension
+
+
+on:
+  workflow_dispatch:
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26.8.1
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build extension
+        run: pnpm build
+
+      - name: Read release metadata
+        id: release
+        shell: bash
+        run: |
+          version="$(jq -r '.version' public/manifest.json)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          echo "archive=ani-rss-chrome-ext-v$version.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Package ZIP
+        working-directory: dist
+        run: zip -r "../${{ steps.release.outputs.archive }}" .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: ${{ steps.release.outputs.tag }}
+          files: ${{ steps.release.outputs.archive }}
